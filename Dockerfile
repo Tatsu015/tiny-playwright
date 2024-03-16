@@ -1,17 +1,19 @@
 FROM alpine:3.19 as base
 
+ENV WORKDIR_PATH=/workdir
+
 # Installs latest Chromium package.
 RUN apk upgrade --no-cache --available \
     && apk add --no-cache \
     chromium-swiftshader
 
 # Add Chrome as a user
-RUN mkdir -p /usr/src/app \
+RUN mkdir -p ${WORKDIR_PATH} \
     && adduser -D chrome \
-    && chown -R chrome:chrome /usr/src/app
+    && chown -R chrome:chrome ${WORKDIR_PATH}
 # Run Chrome as non-privileged
 USER chrome
-WORKDIR /usr/src/app
+WORKDIR ${WORKDIR_PATH}
 
 ENV CHROME_BIN=/usr/bin/chromium-browser \
     CHROME_PATH=/usr/lib/chromium/
@@ -20,23 +22,31 @@ ENV CHROME_BIN=/usr/bin/chromium-browser \
 ENV CHROMIUM_FLAGS="--disable-software-rasterizer --disable-dev-shm-usage"
 ENTRYPOINT ["chromium-browser", "--headless"]
 
-FROM base as node
-
 USER root
 RUN apk add --no-cache \
     tini \
-    nodejs npm
+    nodejs
 
-USER chrome
-ENTRYPOINT ["tini", "--"]
 
-FROM node as playwright
+FROM base as builder
+
+WORKDIR ${WORKDIR_PATH}
+
+USER root
+RUN apk add --no-cache \
+    npm
+
+COPY --chown=chrome package.json package-lock.json ./
+RUN npm ci --only=prod --no-audit
+
+
+FROM base as playwright
 
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD 1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-WORKDIR /usr/src/app
-COPY --chown=chrome package.json package-lock.json ./
-RUN npm install
-COPY --chown=chrome . ./
+ENV NODE_ENV production
+WORKDIR ${WORKDIR_PATH}
+COPY --from=builder --chown=chrome:chrome ${WORKDIR_PATH}/node_modules ./node_modules
+COPY --chown=chrome src ./src
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "/usr/src/app/src/useragent"]
+CMD ["node", "${WORKDIR_PATH}/src/useragent"]

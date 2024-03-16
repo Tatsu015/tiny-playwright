@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/useragent",
     "build:container": "docker build -t tiny-playwright:latest --target=playwright .",
-    "start:outside": "docker run -it tiny-playwright:latest npm start"
+    "start:outside": "docker run -it tiny-playwright:latest node src/useragent.js"
   },
   "author": "",
   "license": "ISC",
