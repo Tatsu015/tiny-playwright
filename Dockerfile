@@ -15,12 +15,12 @@ RUN mkdir -p ${WORKDIR_PATH} \
 USER chrome
 WORKDIR ${WORKDIR_PATH}
 
-ENV CHROME_BIN=/usr/bin/chromium-browser \
+ENV CHROME_BIN=/usr/bin/chromium \
     CHROME_PATH=/usr/lib/chromium/
 
 # Autorun chrome headless
 ENV CHROMIUM_FLAGS="--disable-software-rasterizer --disable-dev-shm-usage"
-ENTRYPOINT ["chromium-browser", "--headless"]
+ENTRYPOINT ["chromium", "--headless"]
 
 USER root
 RUN apk add --no-cache \
