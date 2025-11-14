@@ -40,10 +40,12 @@ COPY --chown=chrome package.json package-lock.json ./
 RUN npm ci --only=prod --no-audit
 
 
-FROM base as playwright
+FROM base
+
+ARG WORKDIR_PATH
 
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD 1
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 ENV NODE_ENV production
 WORKDIR ${WORKDIR_PATH}
 COPY --from=builder --chown=chrome:chrome ${WORKDIR_PATH}/node_modules ./node_modules
